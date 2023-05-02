@@ -1,6 +1,8 @@
 """Flask app for Pixly"""
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template, redirect, flash, url_for
 from flask_debugtoolbar import DebugToolbarExtension
+from werkzeug.utils import secure_filename
+from werkzeug.datastructures import FileStorage
 from models import connect_db, db, Cupcake, DEFAULT_IMAGE
 
 import os
@@ -20,7 +22,7 @@ debug = DebugToolbarExtension(app)
 
 connect_db(app)
 
-UPLOAD_FOLDER = '/uploads'
+UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -48,32 +50,64 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 #     return jsonify(cupcake=serialized)
 
-@app.post("/api/images")
+# @app.post("/api/cupcakes")
+# def upload_file():
+#     """
+#     Create a new cupcake! and return JSON
+#     {cupcake: {id, flavor, size, rating, image}}
+#     """
+#     #TODO: request.json directly in instantiation of the cupcake
+#     #TODO: flavor = request.json["flavor"]
+#     flavor = request.json["flavor"]
+#     size = request.json["size"]
+#     rating = request.json["rating"]
+#     image = request.json.get('image', DEFAULT_IMAGE)
+
+#     new_cupcake = Cupcake(
+#         flavor=flavor,
+#         size=size,
+#         rating=rating,
+#         image=image
+#     )
+
+#     db.session.add(new_cupcake)
+#     db.session.commit()
+
+#     serialized = new_cupcake.serialize()
+
+#     return (jsonify(cupcake=serialized), CREATE_STATUS_CODE)
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/', methods=['GET', 'POST'])
 def upload_file():
-    """
-    Create a new cupcake! and return JSON
-    {cupcake: {id, flavor, size, rating, image}}
-    """
-    #TODO: request.json directly in instantiation of the cupcake
-    #TODO: flavor = request.json["flavor"]
-    flavor = request.json["flavor"]
-    size = request.json["size"]
-    rating = request.json["rating"]
-    image = request.json.get('image', DEFAULT_IMAGE)
-
-    new_cupcake = Cupcake(
-        flavor=flavor,
-        size=size,
-        rating=rating,
-        image=image
-    )
-
-    db.session.add(new_cupcake)
-    db.session.commit()
-
-    serialized = new_cupcake.serialize()
-
-    return (jsonify(cupcake=serialized), CREATE_STATUS_CODE)
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+        file = request.files['file']
+        # if user does not select file, browser also
+        # submit an empty part without filename
+        if file.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            return redirect(url_for('uploaded_file',
+                                    filename=filename))
+    return '''
+    <!doctype html>
+    <title>Upload new File</title>
+    <h1>Upload new File</h1>
+    <form method=post enctype=multipart/form-data>
+      <input type=file name=file>
+      <input type=submit value=Upload>
+    </form>
+    '''
 
 # @app.patch("/api/cupcakes/<int:cupcake_id>")
 # def edit_cupcake(cupcake_id):
