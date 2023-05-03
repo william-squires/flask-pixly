@@ -4,6 +4,7 @@ from flask_debugtoolbar import DebugToolbarExtension
 from werkzeug.utils import secure_filename
 from werkzeug.datastructures import FileStorage
 from models import connect_db, db, Image
+from flask_cors import CORS
 from s3 import upload_file_to_s3, download_file_from_s3
 
 import os
@@ -19,6 +20,7 @@ app.config['SQLALCHEMY_ECHO'] = True
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
     "DATABASE_URL", "postgresql:///pixly")
 
+CORS(app)
 debug = DebugToolbarExtension(app)
 
 connect_db(app)
@@ -36,12 +38,13 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+
 def get_file_extension(filename):
     ''' Gets file extension from filename '''
     return filename.split('.')[1].lower()
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.post('/')
 def upload_file():
     '''
     (TODO:) If invalid file will throw an error
@@ -49,18 +52,15 @@ def upload_file():
     uploads to s3
     Puts file in the database
     '''
-    if request.method == 'POST':
-        # check if the post request has the file part
-        if 'file' not in request.files:
-            flash('No file part')
-            return redirect(request.url)
-        file = request.files['file']
+    if 'file' not in request.files:
+        return jsonify("no file")
+    file = request.files['file']
         # if user does not select file, browser also
         # submit an empty part without filename
-        if file.filename == '':
+    if file.filename == '':
             flash('No selected file')
             return redirect(request.url)
-        if file and allowed_file(file.filename):
+    if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             try:
@@ -71,17 +71,7 @@ def upload_file():
                           file_extension=get_file_extension(filename))
             db.session.add(image)
             db.session.commit()
-            return redirect(url_for('uploaded_file',
-                                    filename=filename))
-    return '''
-    <!doctype html>
-    <title>Upload new File</title>
-    <h1>Upload new File</h1>
-    <form method=post enctype=multipart/form-data>
-      <input type=file name=file>
-      <input type=submit value=Upload>
-    </form>
-    '''
+            return jsonify(uploaded="uploaded")
 
 
 @app.get('/<image_id>')
