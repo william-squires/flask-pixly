@@ -24,22 +24,31 @@ debug = DebugToolbarExtension(app)
 connect_db(app)
 
 UPLOAD_FOLDER = 'uploads'
+DOWNLOAD_FOLDER = 'downloads'
+
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 def allowed_file(filename):
+    ''' Checks to see if a file is of an acceptable type'''
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-
 def get_file_extension(filename):
+    ''' Gets file extension from filename '''
     return filename.split('.')[1].lower()
 
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
+    '''
+    (TODO:) If invalid file will throw an error
+    Otherwise removes whitespace from filename and saves it to uploads and
+    uploads to s3
+    Puts file in the database
+    '''
     if request.method == 'POST':
         # check if the post request has the file part
         if 'file' not in request.files:
@@ -77,6 +86,10 @@ def upload_file():
 
 @app.get('/<image_id>')
 def download_file(image_id):
+    '''
+    Gets image by id from API and downloads from s3
+    Returns json about image
+    '''
     file = Image.query.get_or_404(image_id)
     img_id = file.image_id
     extension = file.file_extension
