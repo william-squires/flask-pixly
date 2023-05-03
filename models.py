@@ -1,4 +1,4 @@
-"""Models for Cupcake app."""
+"""Models for Pixly app."""
 
 from flask_sqlalchemy import SQLAlchemy
 

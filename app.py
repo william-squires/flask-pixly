@@ -27,6 +27,7 @@ connect_db(app)
 
 UPLOAD_FOLDER = 'static/uploads'
 DOWNLOAD_FOLDER = 'static/downloads'
+BASE_URL = os.environ.get('AWS_BUCKET_BASE_URL')
 
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
@@ -82,7 +83,16 @@ def download_file(image_id):
     '''
     file = Image.query.get_or_404(image_id)
     img_id = file.image_id
-    extension = file.file_extension
-    download_file_from_s3(img_id, extension)
-    return send_file(f'{DOWNLOAD_FOLDER}/{img_id}.{extension}', f'{img_id}.{extension}')
+    return jsonify(url=f'{BASE_URL}{img_id}')
     # return render_template('image_render.html', image=f'{DOWNLOAD_FOLDER}/{img_id}.{extension}')
+
+@app.get('/')
+def get_images():
+    '''return json object of all image urls'''
+
+    images = Image.query.all()
+    urls =[]
+    for image in images:
+        urls.append({"url": f'{BASE_URL}{image.image_id}'})
+    print(urls)
+    return jsonify(urls)
