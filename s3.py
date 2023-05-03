@@ -10,6 +10,9 @@ AWS_SECRET = os.environ.get('AWS_SECRET_KEY')
 AWS_REGION = os.environ.get('AWS_REGION')
 AWS_BUCKET = os.environ.get('AWS_BUCKET_NAME')
 
+UPLOAD_FOLDER = 'static/uploads'
+DOWNLOAD_FOLDER = 'static/downloads'
+
 s3 = boto3.client('s3',
                   AWS_REGION,
                   aws_access_key_id=AWS_ACCESS,
@@ -31,7 +34,7 @@ def upload_file_to_s3(file_name):
 def download_file_from_s3(object_name, file_extension):
     """downloads file by object name. return path to that file"""
     try:
-        s3.download_file(AWS_BUCKET, object_name, f'downloads/{object_name}.{file_extension}')
+        s3.download_file(AWS_BUCKET, object_name, f'{DOWNLOAD_FOLDER}/{object_name}.{file_extension}')
         print('Download successful')
     except Exception:
         print('Error downloading file from s3')

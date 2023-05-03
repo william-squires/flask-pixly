@@ -1,5 +1,5 @@
 """Flask app for Pixly"""
-from flask import Flask, jsonify, request, render_template, redirect, flash, url_for
+from flask import Flask, jsonify, request, render_template, redirect, flash, url_for, send_file
 from flask_debugtoolbar import DebugToolbarExtension
 from werkzeug.utils import secure_filename
 from werkzeug.datastructures import FileStorage
@@ -25,8 +25,8 @@ debug = DebugToolbarExtension(app)
 
 connect_db(app)
 
-UPLOAD_FOLDER = 'uploads'
-DOWNLOAD_FOLDER = 'downloads'
+UPLOAD_FOLDER = 'static/uploads'
+DOWNLOAD_FOLDER = 'static/downloads'
 
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
@@ -58,20 +58,20 @@ def upload_file():
         # if user does not select file, browser also
         # submit an empty part without filename
     if file.filename == '':
-            flash('No selected file')
-            return redirect(request.url)
+        flash('No selected file')
+        return redirect(request.url)
     if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            try:
-                object_name = upload_file_to_s3(f'uploads/{filename}')
-            except Exception:
-                print('An error is happening')
-            image = Image(image_id=object_name, filename=filename,
-                          file_extension=get_file_extension(filename))
-            db.session.add(image)
-            db.session.commit()
-            return jsonify(uploaded="uploaded")
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        try:
+            object_name = upload_file_to_s3(f'{UPLOAD_FOLDER}/{filename}')
+        except Exception:
+            print('An error is happening')
+        image = Image(image_id=object_name, filename=filename,
+                      file_extension=get_file_extension(filename))
+        db.session.add(image)
+        db.session.commit()
+        return jsonify(uploaded="uploaded")
 
 
 @app.get('/<image_id>')
@@ -84,4 +84,5 @@ def download_file(image_id):
     img_id = file.image_id
     extension = file.file_extension
     download_file_from_s3(img_id, extension)
-    return jsonify(img_id)
+    return send_file(f'{DOWNLOAD_FOLDER}/{img_id}.{extension}', f'{img_id}.{extension}')
+    # return render_template('image_render.html', image=f'{DOWNLOAD_FOLDER}/{img_id}.{extension}')
