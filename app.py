@@ -7,6 +7,7 @@ from models import connect_db, db, Image
 from flask_cors import CORS
 from s3 import upload_file_to_s3, download_file_from_s3
 import base64
+from PIL import Image as ImageFromPil, ExifTags
 
 import os
 
@@ -34,11 +35,33 @@ ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-
 def allowed_file(filename):
     ''' Checks to see if a file is of an acceptable type'''
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# def get_all_exif_data(filename):
+#     ''' Gets exif data from an image '''
+#     img = ImageFromPil.open(filename)
+#     img_exif = img.getexif()
+#     print(type(img_exif))
+#     # <class 'PIL.Image.Exif'>
+#     if img_exif is None:
+#         print('Sorry, image has no exif data.')
+#     else:
+#         print("inside of else")
+#         for key, val in img_exif.items():
+#             if key in ExifTags.TAGS:
+#                 print(f'{ExifTags.TAGS[key]}:{val}')
+#     img.close()
+
+def get_make(exifobj):
+    ''' Gets make and model from exif data '''
+    return exifobj.get("tags").get("Make")
+
+
+def get_model(exifobj):
+    return exifobj.get("tags").get("Model")
 
 
 def get_file_extension(filename):
@@ -67,12 +90,18 @@ def upload_file():
     f = open(filename, "wb")
     f.write(image_data)
     f.close()
+    # print(type(request.json.get("exif")))
+    # print("Tags", request.json.get("exif")["tags"])
+    make = get_make(request.json.get("exif"))
+    print("make=", make)
+    model = get_model(request.json.get("exif"))
+    print("model", model)
     try:
         object_name = upload_file_to_s3(filename)
     except Exception:
         print('An error is happening')
-    image = Image(image_id=object_name, filename=filename,
-    file_extension=get_file_extension(filename))
+    image = Image(image_id=object_name, filename=name,
+    file_extension=get_file_extension(filename), make=make, model=model)
     db.session.add(image)
     db.session.commit()
     return jsonify(uploaded="uploaded")

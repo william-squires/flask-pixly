@@ -34,3 +34,13 @@ class Image(db.Model):
         db.String(10),
         nullable=False,
     )
+
+    make = db.Column(
+        db.String(50),
+        nullable=True
+    )
+
+    model = db.Column(
+        db.String(50),
+        nullable=True
+    )
