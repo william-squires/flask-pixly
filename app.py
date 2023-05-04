@@ -161,7 +161,7 @@ def get_images():
 @app.get('/search')
 def get_images_by_search_term():
     """searches for an image by description"""
-    term = request.query["description"]
+    term = request.args.get("description", "")
 
     images = Image.query.filter(Image.description.like(f'%{term}%')).all()
 
