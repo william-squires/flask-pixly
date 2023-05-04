@@ -44,3 +44,8 @@ class Image(db.Model):
         db.String(50),
         nullable=True
     )
+
+    description = db.Column(
+        db.String(200),
+        nullable=False
+    )

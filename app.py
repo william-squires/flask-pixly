@@ -35,6 +35,7 @@ ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+
 def allowed_file(filename):
     ''' Checks to see if a file is of an acceptable type'''
     return '.' in filename and \
@@ -54,6 +55,7 @@ def allowed_file(filename):
 #             if key in ExifTags.TAGS:
 #                 print(f'{ExifTags.TAGS[key]}:{val}')
 #     img.close()
+
 
 def get_make(exifobj):
     ''' Gets make and model from exif data '''
@@ -96,12 +98,16 @@ def upload_file():
     print("make=", make)
     model = get_model(request.json.get("exif"))
     print("model", model)
+    description = request.json.get("description", "")
     try:
         object_name = upload_file_to_s3(filename)
     except Exception:
         print('An error is happening')
-    image = Image(image_id=object_name, filename=name,
-    file_extension=get_file_extension(filename), make=make, model=model)
+    image = Image(image_id=object_name,
+                  filename=name,
+                  file_extension=get_file_extension(filename),
+                  make=make, model=model,
+                  description=description)
     db.session.add(image)
     db.session.commit()
     return jsonify(uploaded="uploaded")
@@ -145,6 +151,20 @@ def get_images():
     '''return json object of all image urls'''
 
     images = Image.query.all()
+    urls = []
+    for image in images:
+        urls.append({"url": f'{BASE_URL}{image.image_id}'})
+    print(urls)
+    return jsonify(urls)
+
+
+@app.get('/search')
+def get_images_by_search_term():
+    """searches for an image by description"""
+    term = request.query["description"]
+
+    images = Image.query.filter(Image.description.like(f'%{term}%')).all()
+
     urls = []
     for image in images:
         urls.append({"url": f'{BASE_URL}{image.image_id}'})
