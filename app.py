@@ -160,10 +160,16 @@ def get_images():
 
 @app.get('/search')
 def get_images_by_search_term():
-    """searches for an image by description"""
-    term = request.args.get("description", "")
-
-    images = Image.query.filter(Image.description.like(f'%{term}%')).all()
+    """searches for an image by method and term"""
+    term = request.args.get("term", "")
+    method = request.args.get("method")
+    if method == "description":
+        images = Image.query.filter(Image.description.ilike(f'%{term}%')).all()
+    elif method == "make":
+        print("inside make")
+        images = Image.query.filter(Image.make.ilike(f'%{term}%')).all()
+    elif method == "model":
+        images = Image.query.filter(Image.model.ilike(f'%{term}%')).all()
 
     urls = []
     for image in images:
