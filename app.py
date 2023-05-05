@@ -8,6 +8,7 @@ from flask_cors import CORS
 from s3 import upload_file_to_s3, download_file_from_s3
 import base64
 from PIL import Image as ImageFromPil, ExifTags
+from random import sample
 
 import os
 
@@ -174,5 +175,19 @@ def get_images_by_search_term():
     urls = []
     for image in images:
         urls.append({"url": f'{BASE_URL}{image.image_id}'})
+    print(urls)
+    return jsonify(urls)
+
+@app.get('/random')
+def get_random_images():
+    """returns urls to random image. takes count query param to specify how many."""
+    count = request.args.get("count", 1)
+
+    images = Image.query.all()
+    urls = []
+    for image in images:
+        urls.append({"url": f'{BASE_URL}{image.image_id}'})
+    print(urls)
+    urls = sample(urls, int(count))
     print(urls)
     return jsonify(urls)
