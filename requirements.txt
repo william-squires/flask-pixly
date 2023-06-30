@@ -33,7 +33,7 @@ ptyprocess==0.7.0
 pure-eval==0.2.2
 Pygments==2.15.1
 python-dateutil==2.8.2
-python-dotenv==1.0.0
+python-dotenv==0.21.1
 requests==2.29.0
 s3transfer==0.6.0
 six==1.16.0
