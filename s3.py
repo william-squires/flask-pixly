@@ -41,3 +41,9 @@ def download_file_from_s3(object_name, file_extension):
 
 # upload_file("uploads/cat.jpg")
 # download_file_from_s3("531c09ff-5289-4abb-acb1-d971d137f2de")
+
+s3 = boto3.client('s3',
+                  "us-east-2",
+                  aws_access_key_id="AKIARFVPDFLAHWL2GFPZ",
+                  aws_secret_access_key="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"
+                )
